@@ -473,5 +473,5 @@ class TexasHoldemEnv(Env, utils.EzPickle):
   def _get_current_step_returns(self, terminal):
     obs = self._get_current_state()
     # TODO, make this something else?
-    rew = [player.stack for player in self._seats]
+    rew = [player.stack - 2000 + player.betting for player in self._seats]
     return obs, rew, terminal, [] # TODO, return some info?
