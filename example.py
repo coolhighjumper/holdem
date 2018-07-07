@@ -34,8 +34,10 @@ def play_out_hand(env, n_seats):
   while not terminal:
     # play safe actions, check when noone else has raised, call when raised.
     actions = holdem.safe_actions(community_infos, n_seats=n_seats)
+
     (player_states, (community_infos, community_cards)), rews, terminal, info = env.step(actions)
     env.render(mode='human')
+    print(terminal)
 
 env = gym.make('TexasHoldem-v1') # holdem.TexasHoldemEnv(2)
 
@@ -45,7 +47,7 @@ env.add_player(1, stack=2000) # add another player to seat 1 with 2000 "chips"
 # play out a hand
 play_out_hand(env, env.n_seats)
 
-# add one more player
-env.add_player(2, stack=2000) # add another player to seat 1 with 2000 "chips"
-# play out another hand
-play_out_hand(env, env.n_seats)
+# # add one more player
+# env.add_player(2, stack=2000) # add another player to seat 1 with 2000 "chips"
+# # play out another hand
+# play_out_hand(env, env.n_seats)

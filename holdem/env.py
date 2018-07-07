@@ -181,7 +181,11 @@ class TexasHoldemEnv(Env, utils.EzPickle):
 
     players = [p for p in self._seats if p.playing_hand]
     if len(players) == 1:
-      raise error.Error('Round cannot be played with one player.')
+      # raise error.Error('Round cannot be played with one player.')
+      terminal = True
+      self._resolve_round(players)
+      return self._get_current_step_returns(terminal)
+
 
     self._last_player = self._current_player
     self._last_actions = actions
@@ -473,5 +477,5 @@ class TexasHoldemEnv(Env, utils.EzPickle):
   def _get_current_step_returns(self, terminal):
     obs = self._get_current_state()
     # TODO, make this something else?
-    rew = [player.stack - 2000 + player.betting for player in self._seats]
+    rew = [player.stack - 2000 for player in self._seats]
     return obs, rew, terminal, [] # TODO, return some info?
