@@ -119,6 +119,7 @@ class TexasHoldemEnv(Env, utils.EzPickle):
 
   def add_player(self, seat_id, stack=2000):
     """Add a player to the environment seat with the given stack (chipcount)"""
+    self.stack = stack
     player_id = seat_id
     if player_id not in self._player_dict:
       new_player = Player(player_id, stack=stack, emptyplayer=False)
@@ -436,7 +437,7 @@ class TexasHoldemEnv(Env, utils.EzPickle):
       'bigblind': self._bigblind,
       'player_id': current_player.player_id,
       'lastraise': self._lastraise,
-      'minraise': max(self._bigblind, self._lastraise + self._tocall),
+      'minraise': max(self._bigblind, self._lastraise),
     }
 
   def _pad(self, l, n, v):
@@ -465,7 +466,7 @@ class TexasHoldemEnv(Env, utils.EzPickle):
       int(self._bigblind),
       int(self._totalpot),
       int(self._lastraise),
-      int(max(self._bigblind, self._lastraise + self._tocall)),
+      int(max(self._bigblind, self._lastraise)),
       int(self._tocall - self._current_player.currentbet),
       int(self._current_player.player_id),
     ], self._pad(self.community, 5, -1))
@@ -477,5 +478,5 @@ class TexasHoldemEnv(Env, utils.EzPickle):
   def _get_current_step_returns(self, terminal):
     obs = self._get_current_state()
     # TODO, make this something else?
-    rew = [player.stack - 2000 for player in self._seats]
+    rew = [player.stack - self.stack + player.currentbet for player in self._seats]
     return obs, rew, terminal, [] # TODO, return some info?
