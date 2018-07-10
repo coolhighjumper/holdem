@@ -55,10 +55,10 @@ class DeepQNetwork:
         # output = action
         self.s = tf.placeholder(tf.float32, [None, self.n_features], name='s')  # input
         self.q_target = tf.placeholder(tf.float32, [None, self.n_actions], name='Q_target')  # for calculating loss
-        with tf.variable_scope('eval_net' + self.nickname):
+        with tf.variable_scope('eval_net' + self.nickname, reuse=tf.AUTO_REUSE):
             # c_names(collections_names) are the collections to store variables
             c_names, n_l1, n_l2, w_initializer, b_initializer = \
-                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 25, 10,\
+                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 100, 20,\
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
 
             # first layer. collections is used later when assign to target net
@@ -80,14 +80,14 @@ class DeepQNetwork:
                 b3 = tf.get_variable('b3', [1, self.n_actions], initializer=b_initializer, collections=c_names)
                 self.q_eval = tf.matmul(l2, w3) + b3
 
-        with tf.variable_scope('loss'+ self.nickname):
+        with tf.variable_scope('loss'+ self.nickname, reuse=tf.AUTO_REUSE):
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
-        with tf.variable_scope('train'+ self.nickname):
+        with tf.variable_scope('train'+ self.nickname, reuse=tf.AUTO_REUSE):
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
 
         # ------------------ build target_net ------------------
         self.s_ = tf.placeholder(tf.float32, [None, self.n_features], name='s_')    # input
-        with tf.variable_scope('target_net'+ self.nickname):
+        with tf.variable_scope('target_net'+ self.nickname, reuse=tf.AUTO_REUSE):
             # c_names(collections_names) are the collections to store variables
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
 
@@ -107,6 +107,16 @@ class DeepQNetwork:
                 w3 = tf.get_variable('w3', [n_l2, self.n_actions], initializer=w_initializer, collections=c_names)
                 b3 = tf.get_variable('b3', [1, self.n_actions], initializer=b_initializer, collections=c_names)
                 self.q_next = tf.matmul(l2, w3) + b3
+    
+    def save_model(self):
+        saver = tf.train.Saver()
+        save_path = saver.save(self.sess, "./models/model.ckpt")
+
+    def load_model(self):
+        self._build_net()
+        saver = tf.train.Saver()
+        saver.restore(self.sess, "./models/model.ckpt")
+
 
     def store_transition(self, s, a, r, s_, current_player):
         if not hasattr(self, 'memory_counter'):
