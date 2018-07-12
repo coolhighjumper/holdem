@@ -58,7 +58,7 @@ class DeepQNetwork:
         with tf.variable_scope('eval_net' + self.nickname, reuse=tf.AUTO_REUSE):
             # c_names(collections_names) are the collections to store variables
             c_names, n_l1, n_l2, n_l3, w_initializer, b_initializer = \
-                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 128, 32, 8,\
+                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 30, 10, 10,\
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
 
             # first layer. collections is used later when assign to target net
@@ -73,17 +73,17 @@ class DeepQNetwork:
                 b2 = tf.get_variable('b2', [1, n_l2], initializer=b_initializer, collections=c_names)
                 l2 = tf.nn.relu(tf.matmul(l1, w2) + b2)
 
-            with tf.variable_scope('l3'):
-                w3 = tf.get_variable('w3', [n_l2, n_l3], initializer=w_initializer, collections=c_names)
-                b3 = tf.get_variable('b3', [1, n_l3], initializer=b_initializer, collections=c_names)
-                l3 = tf.nn.relu(tf.matmul(l2, w3) + b3)
+            # with tf.variable_scope('l3'):
+            #     w3 = tf.get_variable('w3', [n_l2, n_l3], initializer=w_initializer, collections=c_names)
+            #     b3 = tf.get_variable('b3', [1, n_l3], initializer=b_initializer, collections=c_names)
+            #     l3 = tf.nn.relu(tf.matmul(l2, w3) + b3)
 
             # second layer. collections is used later when assign to target net
             # layer2底下的命名
-            with tf.variable_scope('l4'):
-                w4 = tf.get_variable('w4', [n_l3, self.n_actions], initializer=w_initializer, collections=c_names)
-                b4 = tf.get_variable('b4', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-                self.q_eval = tf.matmul(l3, w4) + b4
+            with tf.variable_scope('l3'):
+                w3 = tf.get_variable('w3', [n_l2, self.n_actions], initializer=w_initializer, collections=c_names)
+                b3 = tf.get_variable('b3', [1, self.n_actions], initializer=b_initializer, collections=c_names)
+                self.q_eval = tf.matmul(l2, w3) + b3
 
         with tf.variable_scope('loss'+ self.nickname, reuse=tf.AUTO_REUSE):
             self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
@@ -107,15 +107,15 @@ class DeepQNetwork:
                 b2 = tf.get_variable('b2', [1, n_l2], initializer=b_initializer, collections=c_names)
                 l2 = tf.nn.relu(tf.matmul(l1, w2) + b2)
 
-            with tf.variable_scope('l3'):
-                w3 = tf.get_variable('w3', [n_l2, n_l3], initializer=w_initializer, collections=c_names)
-                b3 = tf.get_variable('b3', [1, n_l3], initializer=b_initializer, collections=c_names)
-                l3 = tf.nn.relu(tf.matmul(l2, w3) + b3)
+            # with tf.variable_scope('l3'):
+            #     w3 = tf.get_variable('w3', [n_l2, n_l3], initializer=w_initializer, collections=c_names)
+            #     b3 = tf.get_variable('b3', [1, n_l3], initializer=b_initializer, collections=c_names)
+            #     l3 = tf.nn.relu(tf.matmul(l2, w3) + b3)
             # second layer. collections is used later when assign to target net
-            with tf.variable_scope('l4'):
-                w4 = tf.get_variable('w4', [n_l3, self.n_actions], initializer=w_initializer, collections=c_names)
-                b4 = tf.get_variable('b4', [1, self.n_actions], initializer=b_initializer, collections=c_names)
-                self.q_next = tf.matmul(l3, w4) + b4
+            with tf.variable_scope('l3'):
+                w3 = tf.get_variable('w3', [n_l3, self.n_actions], initializer=w_initializer, collections=c_names)
+                b3 = tf.get_variable('b3', [1, self.n_actions], initializer=b_initializer, collections=c_names)
+                self.q_next = tf.matmul(l2, w3) + b3
     
     def save_model(self):
         saver = tf.train.Saver()
