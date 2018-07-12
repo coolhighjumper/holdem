@@ -5,10 +5,9 @@
 import time
 import json
 from websocket import create_connection
+# import websocket-client
 
 # pip install websocket-client
-ws = ""
-
 def takeAction(action, data):
     if action == "__bet":
         #time.sleep(2)
@@ -16,7 +15,7 @@ def takeAction(action, data):
             "eventName": "__action",
             "data": {
                 "action": "bet",
-                "playerName": "9e854e5865924fe3d61fe89d56220808",
+                "playerName": "ppp",
                 "amount": 100
             }
         }))
@@ -25,8 +24,8 @@ def takeAction(action, data):
         ws.send(json.dumps({
             "eventName": "__action",
             "data": {
-                "action": "call",
-                "playerName": "9e854e5865924fe3d61fe89d56220808"
+                "action": "allin",
+                "playerName": "ppp"
             }
         }))
 
@@ -38,7 +37,7 @@ def doListen():
         ws.send(json.dumps({
             "eventName": "__join",
             "data": {
-                "playerName": "9e854e5865924fe3d61fe89d56220808"
+                "playerName": "ppp"
             }
         }))
         while 1:
