@@ -12,9 +12,8 @@ import holdem
 from treys import Card, Evaluator
 import holdem.DQN as DQN
 import tensorflow as tf
+import pandas as pd
 # import websocket-client
-
-community_card = []
 class action_table:
     CHECK = 0
     CALL = 1
@@ -29,6 +28,7 @@ def transferCard(cards):
             suit = Card.get_suit_int(i)
             suit = int(math.log2(suit))
             result.append(suit * 13 + rank)
+        print('cards = ', result)
         one_hot_encoding = np.zeros(52)
         one_hot_encoding[result] += 1
     except Exception as e:
@@ -37,86 +37,160 @@ def transferCard(cards):
         
     return one_hot_encoding
 
+def get_community_card(data):
+    
+    community_card = [Card.new(x[0]+x[1].lower()) for x in data['table']['board']]
+    return community_card
+
 def get_observation(data):
+    global community_card
+    # print(data)
     stack = data['self']['chips']
-    print('stack= ', stack)
+    # print('stack= ', stack)
     hand_cards = [Card.new(x[0]+x[1].lower()) for x in data['self']['cards']]
-    print('community_card= ',community_card)
-    print('hand_cards= ', hand_cards)
-    cards = transferCard(hand_cards * 2 + community_card)
-    print('cards= ',cards)
+    # print('hand_cards= ', hand_cards)
+    # print('community_card= ',community_card)
+    
+    cards = transferCard(hand_cards + hand_cards + community_card)
+    # print('cards= ',cards)
     to_call = data['self']['minBet']
-    print('to_call= ',to_call)
+    # print('to_call= ',to_call)
     if len(community_card)==0:
         handrank = -1
     else:
         handrank = Evaluator().evaluate(community_card, hand_cards)
-    print('handrank= ',handrank)
+    # print('handrank= ',handrank)
     betting = data['self']['bet']
-    print('betting= ',betting)
-    totalpot = data['self']['roundBet']
-    print('totalpot= ',totalpot)
+    # print('betting= ',betting)
+    totalpot = betting
+    for player in data['game']['players']:
+        totalpot += player['bet']
+    # print('totalpot= ',totalpot)
     return np.concatenate(([totalpot, to_call, stack - 3000, handrank, betting], cards))
 
 # pip install websocket-client
 def takeAction(action, data):
-    if action == "__bet":
-        #time.sleep(2)
-        ws.send(json.dumps({
-            "eventName": "__action",
-            "data": {
-                "action": "bet",
-                "playerName": "ppp",
-                "amount": 100
-            }
-        }))
-    elif action == "__action":
-        #time.sleep(2)
-        # print('get_observation')
-        observation = get_observation(data)
-        # print('get_action')
-        print(observation.shape)
-        action = RL2.choose_action(observation)
-        print(action)
-        amount = 0
-        if action == 0:
-            action = 'check'
-        elif action == 1:
-            action = 'call'
-        elif action == 2:
-            action = 'raise'
-        elif action == 3:
-            action == 'fold'
-        ws.send(json.dumps({
-            "eventName": "__action",
-            "data": {
-                "action": action,
-                "playerName": "ppp"
-            }
-        }))
-    elif action == "__deal":
-        community_card = [Card.new(x[0]+x[1].lower()) for x in data['table']['board']]
-        # print(community_card)
+    global stack_result
+    global next_action
+    global observation
+    global my_action
+    global step
+    global init_chip
+    try:
+        if action == "__bet":
+            #time.sleep(2)
+            step += 1
+            print(step)
+            observation = get_observation(data)
+            # print('get_action')
+            # print(observation.shape)
+            my_action = RL2.choose_action(observation)
+            # print(action)
+            amount = 0
+            if my_action == 0:
+                my_action = 'check'
+            elif my_action == 1:
+                my_action = 'call'
+            elif my_action == 2:
+                my_action = 'bet'
+                amount = observation[1] + 10
+            elif my_action == 3:
+                my_action == 'fold'
+            ws.send(json.dumps({
+                "eventName": "__action",
+                "data": {
+                    "action": my_action,
+                    "playerName": "ppp",
+                    "amount": amount
+                }
+            }))
+        elif action == "__action":
+            #time.sleep(2)
+            # print('get_observation')
+            step+=1
+            next_action = True
+            observation = get_observation(data)
+            # print('get_action')
+            # print(observation.shape)
+            my_action = RL2.choose_action(observation)
+            # print(action)
+            amount = 0
+            if my_action == 0:
+                my_action = 'check'
+            elif my_action == 1:
+                my_action = 'call'
+            elif my_action == 2:
+                my_action = 'bet'
+                amount = observation[1] + 10
+            elif my_action == 3:
+                my_action == 'fold'
+            ws.send(json.dumps({
+                "eventName": "__action",
+                "data": {
+                    "action": my_action,
+                    "amount": amount,
+                    "playerName": "ppp"
+                }
+            }))
+        elif action == "__deal":
+            global community_card
+            community_card = get_community_card(data)
+            
+            # print('community_card= ',community_card)
+            # print(community_card)
 
-    # elif action == "__new_peer":
-    #     stack_result = []
-    #     for i in range(len(data)):
-    #         stack_result.append([])
+        # elif action == "__new_peer":
+        #     stack_result = []
+        #     for i in range(len(data)):
+        #         stack_result.append([])
 
-    # elif action == "__start_reload" and stack == 0:
-    #     ws.send(json.dumps({
-    #         "eventName": "__reload",
-    #     }))
+        elif action == "__start_reload":
+            ws.send(json.dumps({
+                "eventName": "__reload",
+            }))
 
-    elif action == "__show_action":
-        pass
+        elif action == "__show_action" and next_action:
+            print('[info] store to memory')
+            next_action = False
+            for i, player in enumerate(data['players']):
+                if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
+                    player_data = player
+            observation_ = observation
+            # totalpot, to_call, stack - 3000, handrank, betting
+            observation_[0] = data['table']['totalBet']
+            observation_[1] = 0
+            observation_[2] = player_data['chips'] - 3000
+            observation_[4] = player_data['bet']
+            # print('observation_= ', observation)
+            RL2.store_transition(observation, my_action, [0,0,0,0], observation_, 0)
 
 
-    elif action == "__round_end":
-        pass
-        # for i, player in enumerate(data['players']):
-        #     stack_result[i].append(player['chips'])
 
+        elif action == "__round_end":
+
+            for i, player in enumerate(data['players']):
+                if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
+                    chips = player['chips']
+                    print('chips= ',chips)
+                    stack_result.append(player['chips'])
+            print('[info] replace memory')
+            print(step)
+            if step == 0:
+                pass
+            else:
+                RL2.replace_transition(chips - init_chip, step-1, 0)
+            init_chip = chips
+            if step>10:
+                print('[info] start to learn')
+                RL2.learn()
+                RL2.save_model()
+
+        elif action == "__game_over":
+            df = pd.DataFrame(stack_result)
+            df.to_csv('./stacl_result/stack_'+step+'.csv')
+    except Exception as e:
+        raise e
+        
 
 
 def doListen():
@@ -144,6 +218,12 @@ def doListen():
 
 if __name__ == '__main__':
     community_card = []
+    stack_result = []
+    next_action = False
+    observation = []
+    my_action = 0
+    step = 0
+    init_chip = 3000
     tf.reset_default_graph()
     RL2 = DQN.DeepQNetwork(4, 57,
                       learning_rate=0.00001,

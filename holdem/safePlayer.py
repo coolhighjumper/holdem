@@ -1,4 +1,6 @@
 class safePlayer():
+	def __init__(self):
+		self.memory = []
 	def choose_action(self, observation):
 		to_call = observation[1]
 		handRank = observation[3]

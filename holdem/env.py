@@ -458,6 +458,7 @@ class TexasHoldemEnv(Env, utils.EzPickle):
         int(player.betting),
         int(player.isallin),
         int(player.lastsidepot),
+        int(player.currentbet),
       ]
       player_states.append((player_features, self._pad(player.hand, 2, -1)))
     community_states = ([
