@@ -5,6 +5,7 @@
 import time
 import json
 from websocket import create_connection
+import random
 # import websocket-client
 
 # pip install websocket-client
@@ -15,29 +16,43 @@ def takeAction(action, data):
             "eventName": "__action",
             "data": {
                 "action": "bet",
-                "playerName": "ppp",
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca",
                 "amount": 100
             }
         }))
     elif action == "__action":
         #time.sleep(2)
+        # rand_num = random.random()
+        # if rand_num > 0.7:
+        #     take_action = "allin"
+        # else:
+        #     take_action = "call"
         ws.send(json.dumps({
             "eventName": "__action",
             "data": {
                 "action": "allin",
-                "playerName": "ppp"
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
             }
         }))
 
+    elif action == "__game_over":
+        ws.send(json.dumps({
+            "eventName": "__join",
+            "data": {
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+            }
+        }))
+# http://poker-battle.vtr.trendnet.org:3001/#
+# 
 
 def doListen():
     try:
         global ws
-        ws = create_connection("ws://poker-training.vtr.trendnet.org:3001")
+        ws = create_connection("ws://poker-battle.vtr.trendnet.org:3001")
         ws.send(json.dumps({
             "eventName": "__join",
             "data": {
-                "playerName": "ppp"
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
             }
         }))
         while 1:

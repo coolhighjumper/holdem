@@ -78,30 +78,30 @@ def takeAction(action, data):
     global init_chip
     try:
         if action == "__bet":
-            #time.sleep(2)
-            step += 1
-            print(step)
-            observation = get_observation(data)
-            # print('get_action')
-            # print(observation.shape)
-            my_action = RL2.choose_action(observation)
-            # print(action)
-            amount = 0
-            if my_action == 0:
-                my_action = 'check'
-            elif my_action == 1:
-                my_action = 'call'
-            elif my_action == 2:
-                my_action = 'bet'
-                amount = observation[1] + 10
-            elif my_action == 3:
-                my_action == 'fold'
+            # #time.sleep(2)
+            # step += 1
+            # # print(step)
+            # observation = get_observation(data)
+            # # print('get_action')
+            # # print(observation.shape)
+            # my_action = RL2.choose_action(observation)
+            # # print(action)
+            # amount = 0
+            # if my_action == 0:
+            #     my_action = 'check'
+            # elif my_action == 1:
+            #     my_action = 'call'
+            # elif my_action == 2:
+            #     my_action = 'bet'
+            #     amount = observation[1] + 10
+            # elif my_action == 3:
+            #     my_action == 'fold'
             ws.send(json.dumps({
                 "eventName": "__action",
                 "data": {
-                    "action": my_action,
-                    "playerName": "ppp",
-                    "amount": amount
+                    "action": "bet",
+                    "playerName": "294da5cf6f00402d8549b9eba8e242ca",
+                    "amount": 100
                 }
             }))
         elif action == "__action":
@@ -117,21 +117,45 @@ def takeAction(action, data):
             amount = 0
             if my_action == 0:
                 my_action = 'check'
+                ws.send(json.dumps({
+                    "eventName": "__action",
+                    "data": {
+                        "action": 'check',
+                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                    }
+                }))
             elif my_action == 1:
                 my_action = 'call'
+                ws.send(json.dumps({
+                    "eventName": "__action",
+                    "data": {
+                        "action": 'call',
+                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                    }
+                }))
             elif my_action == 2:
                 my_action = 'bet'
                 amount = observation[1] + 10
+                ws.send(json.dumps({
+                    "eventName": "__action",
+                    "data": {
+                        "action": 'bet',
+                        "amount": amount,
+                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                    }
+                }))
+                
             elif my_action == 3:
                 my_action == 'fold'
-            ws.send(json.dumps({
-                "eventName": "__action",
-                "data": {
-                    "action": my_action,
-                    "amount": amount,
-                    "playerName": "ppp"
-                }
-            }))
+                ws.send(json.dumps({
+                    "eventName": "__action",
+                    "data": {
+                        "action": 'fold',
+                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                    }
+                }))
+            print(my_action)
+            print(amount)
         elif action == "__deal":
             global community_card
             community_card = get_community_card(data)
@@ -150,44 +174,52 @@ def takeAction(action, data):
             }))
 
         elif action == "__show_action" and next_action:
-            print('[info] store to memory')
-            next_action = False
-            for i, player in enumerate(data['players']):
-                if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
-                    player_data = player
-            observation_ = observation
-            # totalpot, to_call, stack - 3000, handrank, betting
-            observation_[0] = data['table']['totalBet']
-            observation_[1] = 0
-            observation_[2] = player_data['chips'] - 3000
-            observation_[4] = player_data['bet']
-            # print('observation_= ', observation)
-            RL2.store_transition(observation, my_action, [0,0,0,0], observation_, 0)
+            pass
+            # print('[info] store to memory')
+            # next_action = False
+            # for i, player in enumerate(data['players']):
+            #     if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
+            #         player_data = player
+            # observation_ = observation
+            # # totalpot, to_call, stack - 3000, handrank, betting
+            # observation_[0] = data['table']['totalBet']
+            # observation_[1] = 0
+            # observation_[2] = player_data['chips'] - 3000
+            # observation_[4] = player_data['bet']
+            # # print('observation_= ', observation)
+            # RL2.store_transition(observation, my_action, [0,0,0,0], observation_, 0)
 
 
 
         elif action == "__round_end":
-
-            for i, player in enumerate(data['players']):
-                if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
-                    chips = player['chips']
-                    print('chips= ',chips)
-                    stack_result.append(player['chips'])
-            print('[info] replace memory')
-            print(step)
-            if step == 0:
-                pass
-            else:
-                RL2.replace_transition(chips - init_chip, step-1, 0)
-            init_chip = chips
-            if step>10:
-                print('[info] start to learn')
-                RL2.learn()
-                RL2.save_model()
+            print(data['players'])
+            pass
+            # for i, player in enumerate(data['players']):
+            #     if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
+            #         chips = player['chips']
+            #         print('chips= ',chips)
+            #         stack_result.append(player['chips'])
+            # print('[info] replace memory')
+            # print(step)
+            # if step == 0:
+            #     pass
+            # else:
+            #     RL2.replace_transition(chips - init_chip, step-1, 0)
+            # init_chip = chips
+            # if step>10:
+            #     print('[info] start to learn')
+            #     RL2.learn()
+            #     RL2.save_model()
 
         elif action == "__game_over":
             df = pd.DataFrame(stack_result)
             df.to_csv('./stacl_result/stack_'+step+'.csv')
+            ws.send(json.dumps({
+            "eventName": "__join",
+            "data": {
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+            }
+            }))
     except Exception as e:
         raise e
         
@@ -196,11 +228,11 @@ def takeAction(action, data):
 def doListen():
     try:
         global ws
-        ws = create_connection("ws://poker-training.vtr.trendnet.org:3001")
+        ws = create_connection("ws://poker-battle.vtr.trendnet.org:3001")
         ws.send(json.dumps({
             "eventName": "__join",
             "data": {
-                "playerName": "ppp"
+                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
             }
         }))
         while 1:
