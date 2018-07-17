@@ -51,7 +51,7 @@ def get_observation(data):
     # print('hand_cards= ', hand_cards)
     # print('community_card= ',community_card)
     
-    cards = transferCard(hand_cards + hand_cards + community_card)
+    cards = transferCard(hand_cards + community_card)
     # print('cards= ',cards)
     to_call = data['self']['minBet']
     # print('to_call= ',to_call)
@@ -66,7 +66,7 @@ def get_observation(data):
     for player in data['game']['players']:
         totalpot += player['bet']
     # print('totalpot= ',totalpot)
-    return np.concatenate(([totalpot, to_call, stack - 3000, handrank, betting], cards))
+    return np.concatenate(([totalpot, handrank], cards))
 
 # pip install websocket-client
 def takeAction(action, data):
@@ -76,6 +76,7 @@ def takeAction(action, data):
     global my_action
     global step
     global init_chip
+    global playerName
     try:
         if action == "__bet":
             # #time.sleep(2)
@@ -100,7 +101,7 @@ def takeAction(action, data):
                 "eventName": "__action",
                 "data": {
                     "action": "bet",
-                    "playerName": "294da5cf6f00402d8549b9eba8e242ca",
+                    "playerName": playerName,
                     "amount": 100
                 }
             }))
@@ -121,7 +122,7 @@ def takeAction(action, data):
                     "eventName": "__action",
                     "data": {
                         "action": 'check',
-                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                        "playerName": playerName
                     }
                 }))
             elif my_action == 1:
@@ -130,18 +131,18 @@ def takeAction(action, data):
                     "eventName": "__action",
                     "data": {
                         "action": 'call',
-                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                        "playerName": playerName
                     }
                 }))
             elif my_action == 2:
                 my_action = 'bet'
-                amount = observation[1] + 10
+                amount = 100
                 ws.send(json.dumps({
                     "eventName": "__action",
                     "data": {
                         "action": 'bet',
                         "amount": amount,
-                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                        "playerName": playerName
                     }
                 }))
                 
@@ -151,7 +152,7 @@ def takeAction(action, data):
                     "eventName": "__action",
                     "data": {
                         "action": 'fold',
-                        "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                        "playerName": playerName
                     }
                 }))
             print(my_action)
@@ -192,7 +193,11 @@ def takeAction(action, data):
 
 
         elif action == "__round_end":
-            print(data['players'])
+            community_card = []
+            for i, player in enumerate(data['players']):
+                print(player['playerName'], ":", player['chips'])
+                print('\twinMoney:', player['winMoney'])
+            # print(data['table'])
             pass
             # for i, player in enumerate(data['players']):
             #     if player['playerName'] == 'f27f6f1c7c5cbf4e3e192e0a47b85300':
@@ -212,12 +217,15 @@ def takeAction(action, data):
             #     RL2.save_model()
 
         elif action == "__game_over":
-            df = pd.DataFrame(stack_result)
-            df.to_csv('./stacl_result/stack_'+step+'.csv')
+            # df = pd.DataFrame(stack_result)
+            # df.to_csv('./stacl_result/stack_'+step+'.csv')
+            for i, player in enumerate(data['players']):
+                print(player['playerName'], ":", player['chips'])
+            time.sleep(10)
             ws.send(json.dumps({
             "eventName": "__join",
             "data": {
-                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                "playerName": playerName
             }
             }))
     except Exception as e:
@@ -229,10 +237,11 @@ def doListen():
     try:
         global ws
         ws = create_connection("ws://poker-battle.vtr.trendnet.org:3001")
+        # ws = create_connection("ws://poker-training.vtr.trendnet.org:3001")
         ws.send(json.dumps({
             "eventName": "__join",
             "data": {
-                "playerName": "294da5cf6f00402d8549b9eba8e242ca"
+                "playerName": playerName
             }
         }))
         while 1:
@@ -244,7 +253,7 @@ def doListen():
             # print(data)
             takeAction(event_name, data)
     except Exception as e:
-        print('hello')
+        raise e
         doListen()
 
 
@@ -256,14 +265,18 @@ if __name__ == '__main__':
     my_action = 0
     step = 0
     init_chip = 3000
+    playerName = "294da5cf6f00402d8549b9eba8e242ca" 
+    # playerName = "ppp"
+
     tf.reset_default_graph()
-    RL2 = DQN.DeepQNetwork(4, 57,
+    RL2 = DQN.DeepQNetwork(4, 54,
                       learning_rate=0.00001,
                       reward_decay=0.999,
-                      e_greedy=0.9,
-                      replace_target_iter=10000,
-                      memory_size=50,
+                      e_greedy=0.8,
+                      replace_target_iter=500,
+                      memory_size=100,
                       output_graph=True, nickname='2'
                       )
+
     RL2.load_model()
     doListen()
